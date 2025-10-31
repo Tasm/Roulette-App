@@ -1,11 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "app.netlify.peaceful_zabaione_956be6.twa",
-      "sha256_cert_fingerprints":
-        ["25:DA:E5:6D:C0:9A:97:B3:70:A7:69:06:3A:C8:81:65:BC:1F:3F:0C:46:B3:34:5A:A7:99:3A:8A:C1:39:EE:0C"]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.peaceful_zabaione_956be6.twa",
+        "sha256_cert_fingerprints": ["F4:5F:59:9E:B8:F2:D2:C8:FF:C1:26:6D:D1:D7:B9:DE:36:A1:9C:5B:73:BD:AB:37:F2:8F:61:BB:16:57:5A:17"]
+      }
+    }]
