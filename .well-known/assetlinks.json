@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "app.netlify.heartfelt_kitten_71a9ab.twa",
-        "sha256_cert_fingerprints": ["53:61:F5:BD:63:A5:24:91:7B:8F:5D:4D:23:6F:B7:68:1D:E2:6B:0E:1A:6A:30:F9:D8:E6:34:9C:A5:AE:CC:71"]
+        "package_name": "app.netlify.peaceful_zabaione_956be6.twa",
+        "sha256_cert_fingerprints": ["4D:10:C7:85:B2:38:BE:A3:B2:73:D4:08:15:46:71:01:20:70:1B:22:29:62:C9:64:0B:62:C0:22:89:57:F3:BA"]
       }
     }]
