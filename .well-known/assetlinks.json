@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.heartfelt_kitten_71a9ab.twa",
+        "sha256_cert_fingerprints": ["53:61:F5:BD:63:A5:24:91:7B:8F:5D:4D:23:6F:B7:68:1D:E2:6B:0E:1A:6A:30:F9:D8:E6:34:9C:A5:AE:CC:71"]
+      }
+    }]
