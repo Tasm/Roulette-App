@@ -57,7 +57,7 @@
             position: fixed;
             left: 0;
             top: 70px;
-            bottom: 70px;
+            bottom: 80px;
             width: 50px;
             background-color: #1f2937;
             border-right: 2px solid #374151;
@@ -128,7 +128,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // Roulette number configurations
         const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
@@ -172,6 +172,41 @@
             const parity = isEven(num) ? 'Even' : 'Odd';
             const range = isHigh(num) ? 'High' : 'Low';
             return `${color === 'red' ? 'Red' : 'Black'} ${parity} ${range}`;
+        };
+
+        // All possible splits on roulette layout
+        const ALL_SPLITS = [
+            [0, 1], [0, 2], [0, 3],
+            [1, 2], [1, 4], [2, 3], [2, 5], [3, 6],
+            [4, 5], [4, 7], [5, 6], [5, 8], [6, 9],
+            [7, 8], [7, 10], [8, 9], [8, 11], [9, 12],
+            [10, 11], [10, 13], [11, 12], [11, 14], [12, 15],
+            [13, 14], [13, 16], [14, 15], [14, 17], [15, 18],
+            [16, 17], [16, 19], [17, 18], [17, 20], [18, 21],
+            [19, 20], [19, 22], [20, 21], [20, 23], [21, 24],
+            [22, 23], [22, 25], [23, 24], [23, 26], [24, 27],
+            [25, 26], [25, 28], [26, 27], [26, 29], [27, 30],
+            [28, 29], [28, 31], [29, 30], [29, 32], [30, 33],
+            [31, 32], [31, 34], [32, 33], [32, 35], [33, 36],
+            [34, 35], [35, 36]
+        ];
+
+        // All possible corners on roulette layout
+        const ALL_CORNERS = [
+            [1, 2, 4, 5], [2, 3, 5, 6], [4, 5, 7, 8], [5, 6, 8, 9],
+            [7, 8, 10, 11], [8, 9, 11, 12], [10, 11, 13, 14], [11, 12, 14, 15],
+            [13, 14, 16, 17], [14, 15, 17, 18], [16, 17, 19, 20], [17, 18, 20, 21],
+            [19, 20, 22, 23], [20, 21, 23, 24], [22, 23, 25, 26], [23, 24, 26, 27],
+            [25, 26, 28, 29], [26, 27, 29, 30], [28, 29, 31, 32], [29, 30, 32, 33],
+            [31, 32, 34, 35], [32, 33, 35, 36]
+        ];
+
+        const getSplitsForNumber = (num) => {
+            return ALL_SPLITS.filter(split => split.includes(num));
+        };
+
+        const getCornersForNumber = (num) => {
+            return ALL_CORNERS.filter(corner => corner.includes(num));
         };
 
         // Calculate consecutive misses looking backward from most recent spin
@@ -326,6 +361,9 @@
             // Settings state
             const [uniquesThreshold, setUniquesThreshold] = useState(20);
             const [lossesThreshold, setLossesThreshold] = useState(10);
+            
+            // Ref for mini history sidebar
+            const miniHistoryRef = useRef(null);
 
             // Load data from localStorage
             useEffect(() => {
@@ -369,6 +407,13 @@
             useEffect(() => {
                 localStorage.setItem('lossesThreshold', lossesThreshold.toString());
             }, [lossesThreshold]);
+            
+            // Scroll mini history to top when new spin is added
+            useEffect(() => {
+                if (miniHistoryRef.current && spins.length > 0) {
+                    miniHistoryRef.current.scrollTop = 0;
+                }
+            }, [spins.length]);
 
             const addSpin = (number) => {
                 setSpins([...spins, number]);
@@ -390,53 +435,84 @@
             };
 
             // Number Input View
-            const NumberInput = () => (
-                <div className="p-4">
-                    <div className="mb-3 p-3 bg-gray-800 rounded-lg flex items-center justify-between">
-                        <span className="text-sm">Spin History - Total: {spins.length}</span>
-                        <button 
-                            onClick={() => setShowSpinHistory(true)}
-                            disabled={spins.length === 0}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 px-3 py-1 rounded text-sm font-bold"
-                        >
-                            View All
-                        </button>
-                    </div>
+            const NumberInput = () => {
+                // Create rows for the roulette table layout
+                const rows = [];
+                
+                // First row: 0, blank, 00
+                rows.push([0, null, 37]);
+                
+                // Remaining rows: 1-2-3, 4-5-6, 7-8-9, etc.
+                for (let i = 1; i <= 34; i += 3) {
+                    rows.push([i, i + 1, i + 2]);
+                }
+                
+                return (
+                    <div className="flex flex-col p-1" style={{ height: 'calc(100vh - 170px)' }}>
+                        {/* Spin History Header - Fixed height */}
+                        <div className="flex-shrink-0 mb-1 p-2 bg-gray-800 rounded-lg flex items-center justify-between">
+                            <span className="text-xs">Spin History - Total: {spins.length}</span>
+                            <button 
+                                onClick={() => setShowSpinHistory(true)}
+                                disabled={spins.length === 0}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 px-2 py-1 rounded text-xs font-bold"
+                            >
+                                View All
+                            </button>
+                        </div>
 
-                    <div className="grid grid-cols-6 gap-2 mb-3">
-                        <button onClick={() => addSpin(0)} className="number-btn bg-green-600 hover:bg-green-700 p-3 rounded-lg font-bold text-lg">
-                            0
-                        </button>
-                        <button onClick={() => addSpin(37)} className="number-btn bg-green-600 hover:bg-green-700 p-3 rounded-lg font-bold text-lg">
-                            00
-                        </button>
-                        {[...Array(36)].map((_, i) => {
-                            const num = i + 1;
-                            const color = getNumberColor(num);
-                            return (
-                                <button
-                                    key={num}
-                                    onClick={() => addSpin(num)}
-                                    className={`number-btn p-3 rounded-lg font-bold text-lg ${
-                                        color === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-950 hover:bg-gray-800'
-                                    }`}
-                                >
-                                    {num}
-                                </button>
-                            );
-                        })}
-                    </div>
+                        {/* Roulette Table Layout - Flexible to fill space */}
+                        <div className="flex-1 flex flex-col mb-1" style={{ minHeight: 0 }}>
+                            {rows.map((row, rowIdx) => (
+                                <div key={rowIdx} className="flex-1 grid grid-cols-3 gap-1 mb-1">
+                                    {row.map((num, colIdx) => {
+                                        if (num === null) {
+                                            // Empty space
+                                            return <div key={colIdx}></div>;
+                                        }
+                                        
+                                        const isZero = num === 0 || num === 37;
+                                        const color = isZero ? 'green' : getNumberColor(num);
+                                        const displayNum = num === 37 ? '00' : num;
+                                        
+                                        return (
+                                            <button
+                                                key={colIdx}
+                                                onClick={() => addSpin(num)}
+                                                className={`number-btn w-full h-full rounded font-bold text-xs flex items-center justify-center ${
+                                                    color === 'green' ? 'bg-green-600 hover:bg-green-700' :
+                                                    color === 'red' ? 'bg-red-600 hover:bg-red-700' : 
+                                                    'bg-gray-950 hover:bg-gray-800'
+                                                }`}
+                                            >
+                                                {displayNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
 
-                    <div className="flex gap-2">
-                        <button onClick={removeSpin} disabled={spins.length === 0} className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-700 disabled:text-gray-500 p-3 rounded-lg font-bold">
-                            Undo Last
-                        </button>
-                        <button onClick={clearAll} disabled={spins.length === 0} className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 p-3 rounded-lg font-bold">
-                            Clear All
-                        </button>
+                        {/* Action Buttons - Fixed height */}
+                        <div className="flex-shrink-0 flex gap-1">
+                            <button 
+                                onClick={removeSpin} 
+                                disabled={spins.length === 0} 
+                                className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-700 disabled:text-gray-500 p-2 rounded-lg font-bold text-xs"
+                            >
+                                Undo Last
+                            </button>
+                            <button 
+                                onClick={clearAll} 
+                                disabled={spins.length === 0} 
+                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 p-2 rounded-lg font-bold text-xs"
+                            >
+                                Clear All
+                            </button>
+                        </div>
                     </div>
-                </div>
-            );
+                );
+            };
 
             // Evens Stats View
             const EvensStats = () => {
@@ -653,6 +729,65 @@
                 );
             };
 
+            // Splits Stats View
+            const SplitsStats = () => {
+                const data = getSpinData();
+                
+                const tableData = ALL_SPLITS.map(split => {
+                    const [num1, num2] = split;
+                    const label = num1 === 0 ? `0-${num2}` : 
+                                 num2 === 37 ? `${num1}-00` : 
+                                 `${num1}-${num2}`;
+                    return {
+                        location: label,
+                        miss: calculateMissesInRow(data, n => split.includes(n)),
+                        hit: calculateHitsInRow(data, n => split.includes(n)),
+                        sortValue: split[0] * 100 + split[1]
+                    };
+                });
+
+                const columns = [
+                    { key: 'location', label: 'Location' },
+                    { key: 'miss', label: 'Miss' },
+                    { key: 'hit', label: 'Hit' }
+                ];
+
+                return (
+                    <div className="p-4">
+                        <h2 className="text-2xl font-bold mb-4">Splits</h2>
+                        <SortableTable data={tableData} columns={columns} viewName="splits" />
+                    </div>
+                );
+            };
+
+            // Corners Stats View
+            const CornersStats = () => {
+                const data = getSpinData();
+                
+                const tableData = ALL_CORNERS.map(corner => {
+                    const label = corner.join('-');
+                    return {
+                        location: label,
+                        miss: calculateMissesInRow(data, n => corner.includes(n)),
+                        hit: calculateHitsInRow(data, n => corner.includes(n)),
+                        sortValue: corner[0]
+                    };
+                });
+
+                const columns = [
+                    { key: 'location', label: 'Location' },
+                    { key: 'miss', label: 'Miss' },
+                    { key: 'hit', label: 'Hit' }
+                ];
+
+                return (
+                    <div className="p-4">
+                        <h2 className="text-2xl font-bold mb-4">Corners</h2>
+                        <SortableTable data={tableData} columns={columns} viewName="corners" />
+                    </div>
+                );
+            };
+
             // User Defined Groups View
             const UserGroupsStats = () => {
                 const data = getSpinData();
@@ -828,6 +963,8 @@
 
             // Settings Page View
             const SettingsView = () => {
+                const [showAbout, setShowAbout] = useState(false);
+                
                 const handleCustomRangeChange = (value) => {
                     let newValue = parseInt(value) || 1;
                     if (newValue < 1) newValue = 1;
@@ -850,6 +987,68 @@
                 return (
                     <div className="p-4">
                         <h2 className="text-2xl font-bold mb-4 text-center">Settings</h2>
+                        
+                        {/* About Button */}
+                        <button 
+                            onClick={() => setShowAbout(!showAbout)}
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg mb-4"
+                        >
+                            {showAbout ? '▼' : '▶'} About Gamble Galaxy
+                        </button>
+                        
+                        {/* About Content - Collapsible */}
+                        {showAbout && (
+                            <div className="mb-4 space-y-4">
+                                <div className="bg-gray-800 rounded-lg p-4">
+                                    <h3 className="text-lg font-bold mb-3 text-purple-400">🎰 About</h3>
+                                    <p className="text-sm text-gray-300 mb-3">
+                                        Track and analyze your roulette spins with professional-grade statistics. 
+                                        Monitor patterns, streaks, and probabilities in real-time.
+                                    </p>
+                                    <a 
+                                        href="https://gamble-galaxy.com/tv10m/triggers-m.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg text-center"
+                                    >
+                                        Visit Gamble Galaxy →
+                                    </a>
+                                    <p className="text-xs text-gray-400 mt-2 text-center">
+                                        Free roulette tools and systems
+                                    </p>
+                                </div>
+
+                                <div className="bg-gray-800 rounded-lg p-4">
+                                    <h3 className="text-lg font-bold mb-3 text-green-400">📧 Contact & Support</h3>
+                                    <p className="text-sm text-gray-300 mb-2">
+                                        Questions, feedback, or suggestions?
+                                    </p>
+                                    <a 
+                                        href="mailto:tollens@gmail.com"
+                                        className="block w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-center"
+                                    >
+                                        tollens@gmail.com
+                                    </a>
+                                </div>
+
+                                <div className="bg-gray-800 rounded-lg p-4">
+                                    <h3 className="text-lg font-bold mb-3 text-yellow-400">ℹ️ How It Works</h3>
+                                    <ul className="text-sm text-gray-300 space-y-2">
+                                        <li>• Enter spins using the number buttons</li>
+                                        <li>• View 10 different statistical analyses</li>
+                                        <li>• Click column headers to sort tables</li>
+                                        <li>• Create custom number groups</li>
+                                        <li>• Data saves automatically</li>
+                                        <li>• Works offline after first load</li>
+                                    </ul>
+                                </div>
+
+                                <div className="text-center text-xs text-gray-500">
+                                    <p>Made with ❤️ by Gamble Galaxy</p>
+                                    <p className="mt-1">For entertainment and tracking purposes only</p>
+                                </div>
+                            </div>
+                        )}
                         
                         {/* Spin Lookback Section */}
                         <div className="bg-gray-800 rounded-lg p-4 mb-4">
@@ -953,12 +1152,13 @@
                 dozens: { name: 'Dozens', component: DozensStats },
                 streets: { name: 'Streets', component: StreetsStats },
                 lines: { name: 'Lines', component: LinesStats },
+                splits: { name: 'Splits', component: SplitsStats },
+                corners: { name: 'Corners', component: CornersStats },
                 straights: { name: 'Straights', component: StraightsStats },
                 combo: { name: 'Combo', component: ComboStats },
                 groups: { name: 'Groups', component: UserGroupsStats },
                 unique: { name: 'Unique', component: UniqueStats },
-                settings: { name: 'Settings', component: SettingsView },
-                about: { name: 'About', component: AboutView }
+                settings: { name: 'Settings', component: SettingsView }
             };
 
             // Check if any losses threshold is met for each view
@@ -991,6 +1191,10 @@
                             if (calculateMissesInRow(data, n => getLine(n) === i) >= lossesThreshold) return true;
                         }
                         return false;
+                    case 'splits':
+                        return ALL_SPLITS.some(split => calculateMissesInRow(data, n => split.includes(n)) >= lossesThreshold);
+                    case 'corners':
+                        return ALL_CORNERS.some(corner => calculateMissesInRow(data, n => corner.includes(n)) >= lossesThreshold);
                     case 'combo':
                         const combos = [
                             'Red Odd High', 'Red Odd Low', 'Red Even High', 'Red Even Low',
@@ -1034,11 +1238,11 @@
 
                     {/* Mini Spin History Sidebar */}
                     {spins.length > 0 && (
-                        <div className="mini-history">
-                            {spins.slice(-10).reverse().map((num, idx) => (
+                        <div className="mini-history" ref={miniHistoryRef}>
+                            {spins.slice().reverse().map((num, idx) => (
                                 <div 
                                     key={idx} 
-                                    className={`rounded text-center font-bold text-sm flex items-center justify-center aspect-square ${
+                                    className={`rounded text-center font-bold text-sm flex items-center justify-center aspect-square flex-shrink-0 ${
                                         num === 0 || num === 37 ? 'bg-green-600' :
                                         RED_NUMBERS.includes(num) ? 'bg-red-600' : 'bg-gray-950'
                                     }`}
@@ -1071,7 +1275,7 @@
                                 let shouldHighlight = false;
                                 if (key === 'unique') {
                                     shouldHighlight = checkUniquesAlert();
-                                } else if (['evens', 'dozens', 'streets', 'lines', 'combo', 'groups'].includes(key)) {
+                                } else if (['evens', 'dozens', 'streets', 'lines', 'splits', 'corners', 'combo', 'groups'].includes(key)) {
                                     shouldHighlight = checkLossesAlert(key);
                                 }
                                 
